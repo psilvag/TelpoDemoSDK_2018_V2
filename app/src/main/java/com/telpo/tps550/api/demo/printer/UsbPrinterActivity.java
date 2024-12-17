@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -539,8 +540,11 @@ public class UsbPrinterActivity extends Activity {
 				try {
 					mUsbThermalPrinter.start(0);
 					mUsbThermalPrinter.reset();
-					printVersion = mUsbThermalPrinter.getVersion();					
+					printVersion = mUsbThermalPrinter.getVersion();
+					int st=mUsbThermalPrinter.checkStatus();
+					Log.e("yw","status"+" "+st);
 				} catch (TelpoException e) {
+					Log.e("yw","status  111"+" "+e.toString());
 					e.printStackTrace();
 				} finally {
 					if (printVersion != null) {

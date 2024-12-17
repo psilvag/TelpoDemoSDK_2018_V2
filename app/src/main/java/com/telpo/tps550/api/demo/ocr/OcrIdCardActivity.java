@@ -5,6 +5,7 @@ import java.util.List;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
@@ -132,7 +133,8 @@ public class OcrIdCardActivity extends Activity {
 	@Override
 	protected void onResume() {
 
-        setRequestedOrientation(Oriental);
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); // Vertical
+
 		super.onResume();
 		if (!checkPackage("com.telpo.tps550.api")) {
 			Toast.makeText(this,
@@ -273,7 +275,7 @@ public class OcrIdCardActivity extends Activity {
 		PackageManager manager = this.getPackageManager();
 		Intent intent = new Intent().setPackage(packageName);
 		List<ResolveInfo> infos = manager.queryIntentActivities(intent,
-				PackageManager.GET_INTENT_FILTERS);
+				0);//PackageManager.GET_INTENT_FILTERS
 		if (infos == null || infos.size() < 1) {
 			return false;
 		}

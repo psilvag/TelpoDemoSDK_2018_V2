@@ -30,7 +30,7 @@
         android:layout_alignParentRight="true"
         android:layout_gravity="right|center_vertical"
         android:gravity="center"
-        android:text="20180621"
+        android:text="20180914"
         android:textColor="#005533"
         android:textSize="18sp" />
 

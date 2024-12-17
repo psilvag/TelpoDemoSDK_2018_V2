@@ -16,8 +16,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.telpo.tps550.api.demo.R;
+import com.telpo.tps550.api.fingerprint.FingerPrint;
 import com.telpo.tps550.api.reader.SmartCardReader;
 import com.telpo.tps550.api.util.StringUtil;
+import com.telpo.tps550.api.util.SystemUtil;
 
 public class SmarCardNewActivity extends Activity
 {
@@ -63,6 +65,9 @@ public class SmarCardNewActivity extends Activity
 					
 				case R.id.close_btn:
 					reader.close();
+					if(SystemUtil.getDeviceType() == StringUtil.DeviceModelEnum.TPS450C.ordinal()) {
+						FingerPrint.fingericPower(0);
+					}
 					closeButton.setEnabled(false);
 					openButton.setEnabled(true);
 					poweroffButton.setEnabled(false);
@@ -153,11 +158,13 @@ public class SmarCardNewActivity extends Activity
 		@Override
 		protected Boolean doInBackground(Void... params)
 		{
-			/*if(SystemUtil.getDeviceType() == StringUtil.DeviceModelEnum.TPS450C.ordinal()) {
+			Log.e("yw",SystemUtil.getDeviceType()+"   "+StringUtil.DeviceModelEnum.TPS450C.ordinal());
+			if(SystemUtil.getDeviceType() == StringUtil.DeviceModelEnum.TPS450C.ordinal()) {
+				FingerPrint.fingericPower(1);
 				return reader.open(1);
-			}else {*/
+			}else {
 				return reader.open();
-			//}
+			}
 		}
 		
 		@Override

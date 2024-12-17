@@ -4,9 +4,11 @@ android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
     defaultConfig {
-        applicationId 'com.telpo.tps550.api.demo11111'
+        applicationId 'com.telpo.tps550.api.demo'
         minSdkVersion 15
         targetSdkVersion 15
+        versionCode 1
+        versionName '1.0.7'
     }
     buildTypes {
         release {
@@ -22,4 +24,5 @@ dependencies {
     compile files('libs/core-3.1.0.jar')
     compile files('libs/SmartCardLib.jar')
     compile files('libs/telpo_api.jar')
+    compile 'com.android.support:support-v4:25.2.0'
 }

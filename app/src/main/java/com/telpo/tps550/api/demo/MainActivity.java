@@ -42,6 +42,21 @@ import com.telpo.tps550.api.util.SystemUtil;
 
 import java.util.List;
 
+// Dependencias para el serial Port
+import java.io.File; // Para manejar archivos
+import java.io.OutputStream; // Para enviar datos al puerto serial
+import java.io.IOException; // Para manejar excepciones IO
+import android_serialport_api.SerialPort; // Clase SerialPort para la comunicación serial
+
+//Dependencias para solicitudes HTTP
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+
 public class MainActivity extends Activity {
 
 	private int Oriental = -1;
@@ -275,7 +290,7 @@ public class MainActivity extends Activity {
 	private boolean checkPackage(String packageName) {
 		PackageManager manager = this.getPackageManager();
 		Intent intent = new Intent().setPackage(packageName);
-		List<ResolveInfo> infos = manager.queryIntentActivities(intent, PackageManager.GET_INTENT_FILTERS);
+		List<ResolveInfo> infos = manager.queryIntentActivities(intent, 0);//PackageManager.GET_INTENT_FILTERS
 		if (infos == null || infos.size() < 1) {
 			return false;
 		}
@@ -290,6 +305,22 @@ public class MainActivity extends Activity {
 					mBeepManager.playBeepSoundAndVibrate();
 					String qrcode = data.getStringExtra("qrCode");
 					Toast.makeText(MainActivity.this, "Scan result:" + qrcode, Toast.LENGTH_LONG).show();
+
+
+
+					// -----------Solicitud HTTP-----------
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							makeAsyncData();
+						}
+					}).start();
+
+					//----- Enviar señal al puerto serial-------
+					//String dataSerial="OPEN\n";
+					//sendSignalToSerialPort(dataSerial);
+					//Toast.makeText(MainActivity.this, "Señal enviada:" + dataSerial, Toast.LENGTH_SHORT).show();
+
 					return;
 				}
 			} else {
@@ -298,6 +329,106 @@ public class MainActivity extends Activity {
 		}
 
 	}
+
+	private void makeAsyncData() {
+		HttpURLConnection connection = null;
+		BufferedReader reader = null;
+
+		try {
+			// Establecer conexión
+			URL url = new URL("https://jsonplaceholder.typicode.com/todos/4");
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			connection.connect();
+
+			// Leer la respuesta
+			InputStream inputStream = connection.getInputStream();
+			reader = new BufferedReader(new InputStreamReader(inputStream));
+			StringBuilder result = new StringBuilder();
+			String line;
+
+			while ((line = reader.readLine()) != null) {
+				result.append(line);
+			}
+
+			// Convertir la respuesta a texto
+			final String response = result.toString();
+
+			// Mostrar el resultado en un Toast en el hilo principal
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(MainActivity.this, "Response: " + response, Toast.LENGTH_LONG).show();
+					Toast.makeText(MainActivity.this, "SOLICITUD EXITOSA", Toast.LENGTH_LONG).show();
+				}
+			});
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			// Mostrar errores en el hilo principal
+			final String errorMessage=e.getMessage();
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(MainActivity.this, "Error: " + errorMessage, Toast.LENGTH_LONG).show();
+				}
+			});
+
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+
+
+	/*
+	private void sendSignalToSerialPort(String signal) {
+		SerialPort serialPort = null;
+		OutputStream outputStream = null;
+
+		try {
+			//dev/ttyS0" al dispositivo serial adecuado
+			File device = new File("/dev/ttyS0");
+			int baudrate = 9600; // baudrate según las especificaciones del molinete
+			int flags = 0;
+
+			// Abrir el puerto serial
+			serialPort = new SerialPort(device, baudrate, flags);
+			outputStream = serialPort.getOutputStream();
+
+			Log.d("SerialTest", "Simulando envío: " + signal);
+			// Enviar la señal
+			outputStream.write(signal.getBytes());
+			outputStream.flush();
+
+			Toast.makeText(MainActivity.this, "Señal enviada al molinete", Toast.LENGTH_SHORT).show();
+
+		} catch (IOException | SecurityException e) {
+			e.printStackTrace();
+			Toast.makeText(MainActivity.this, "Error al enviar señal al molinete", Toast.LENGTH_LONG).show();
+		} finally {
+			try {
+				if (outputStream != null) {
+					outputStream.close();
+				}
+				if (serialPort != null) {
+					serialPort.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}*/
+
 
 	@Override
 	protected void onResume() {

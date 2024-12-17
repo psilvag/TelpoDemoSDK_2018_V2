@@ -14,7 +14,10 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.telpo.tps550.api.demo.R;
+import com.telpo.tps550.api.fingerprint.FingerPrint;
 import com.telpo.tps550.api.reader.SLE4428Reader;
+import com.telpo.tps550.api.util.StringUtil;
+import com.telpo.tps550.api.util.SystemUtil;
 
 public class SLE4428Activity extends Activity
 {
@@ -65,6 +68,9 @@ public class SLE4428Activity extends Activity
 					
 				case R.id.sle4428close_btn:
 					reader.close();
+					if(SystemUtil.getDeviceType() == StringUtil.DeviceModelEnum.TPS450C.ordinal()) {
+						FingerPrint.fingericPower(0);
+					}
 					closeButton.setEnabled(false);
 					openButton.setEnabled(true);
 					poweroffButton.setEnabled(false);
@@ -210,7 +216,12 @@ public class SLE4428Activity extends Activity
 		@Override
 		protected Boolean doInBackground(Void... params)
 		{
-			return reader.open();
+			if(SystemUtil.getDeviceType() == StringUtil.DeviceModelEnum.TPS450C.ordinal()) {
+				FingerPrint.fingericPower(1);
+				return reader.open(1);
+			}else {
+				return reader.open();
+			}
 		}
 		
 		@Override
