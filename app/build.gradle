@@ -16,6 +16,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs/armeabi']
+        }
+    }
     productFlavors {
     }
 }
@@ -25,4 +30,6 @@ dependencies {
     compile files('libs/SmartCardLib.jar')
     compile files('libs/telpo_api.jar')
     compile 'com.android.support:support-v4:25.2.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+
 }

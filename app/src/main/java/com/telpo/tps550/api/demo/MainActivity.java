@@ -47,15 +47,16 @@ import java.io.File; // Para manejar archivos
 import java.io.OutputStream; // Para enviar datos al puerto serial
 import java.io.IOException; // Para manejar excepciones IO
 import android_serialport_api.SerialPort; // Clase SerialPort para la comunicación serial
+import android_serialport_api.SerialPortFinder;// Clase para mapear puertos
+
 
 //Dependencias para solicitudes HTTP
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
+import com.google.gson.JsonObject;
 
 public class MainActivity extends Activity {
 
@@ -67,7 +68,9 @@ public class MainActivity extends Activity {
 	private long exitTime = 0;//点击时间控制
 	private int pressTimes = 0;//连续点击次数
 	private SharedPreferences sharedPreferences;
-	
+
+
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -304,23 +307,36 @@ public class MainActivity extends Activity {
 				if (data != null) {
 					mBeepManager.playBeepSoundAndVibrate();
 					String qrcode = data.getStringExtra("qrCode");
-					Toast.makeText(MainActivity.this, "Scan result:" + qrcode, Toast.LENGTH_LONG).show();
+					//Toast.makeText(MainActivity.this, "Scan result:" + qrcode, Toast.LENGTH_LONG).show();
+					Toast.makeText(MainActivity.this, "QR LEIDO", Toast.LENGTH_SHORT).show();
 
 
 
-					// -----------Solicitud HTTP-----------
-					new Thread(new Runnable() {
+
+					// --------------------Solicitud HTTP---------------------
+					/*new Thread(new Runnable() {
 						@Override
 						public void run() {
 							makeAsyncData();
 						}
-					}).start();
+					}).start();*/
 
-					//----- Enviar señal al puerto serial-------
-					//String dataSerial="OPEN\n";
-					//sendSignalToSerialPort(dataSerial);
-					//Toast.makeText(MainActivity.this, "Señal enviada:" + dataSerial, Toast.LENGTH_SHORT).show();
+					//------------------Enviar señal al puerto serial----------------------
 
+					// Buscar puertos seriales disponibles
+					SerialPortFinder serialPortFinder = new SerialPortFinder();
+					String[] allDevices = serialPortFinder.getAllDevicesPath();
+
+					if (allDevices.length > 0) {
+						// Seleccionamos el puerto// allDevices[0]
+						String serialPortPath = "/dev/ttyHSL"; // Ejemplo: "/dev/ttyUSB,HSL,HSL0,HS0,tty,tty0,tty1,2,3,4,5,6---tty63"
+
+						// Enviar señal por el puerto serial
+						String dataSerial = "OPEN";
+						sendSignalToSerialPort(serialPortPath, dataSerial);
+					} else {
+						Toast.makeText(MainActivity.this, "No se encontraron puertos seriales", Toast.LENGTH_LONG).show();
+					}
 					return;
 				}
 			} else {
@@ -330,6 +346,49 @@ public class MainActivity extends Activity {
 
 	}
 
+
+	private void sendSignalToSerialPort(String serialPortPath, String signal) {
+		SerialPort serialPort = null;
+		OutputStream outputStream = null;
+
+		try {
+			// Abrir el puerto serial usando el puerto encontrado
+			File device = new File(serialPortPath);
+			Toast.makeText(MainActivity.this, "Puerto encontrado:"+serialPortPath, Toast.LENGTH_LONG).show();
+			int baudrate = 9600; // baudrate
+			int flags = 0;
+
+			// Abrir el puerto serial
+			serialPort = new SerialPort(device, baudrate, flags);
+			outputStream = serialPort.getOutputStream();
+
+			// Enviar la señal
+			outputStream.write(signal.getBytes());
+			outputStream.flush();
+			Log.d("SerialTest", "Señal enviada correctamente por " + serialPortPath);
+			Toast.makeText(MainActivity.this, "Señal enviada al molinete", Toast.LENGTH_SHORT).show();
+
+		} catch (IOException | SecurityException e) {
+			e.printStackTrace();
+			Toast.makeText(MainActivity.this, "Error al enviar señal al molinete", Toast.LENGTH_LONG).show();
+		} finally {
+			try {
+				if (outputStream != null) {
+					outputStream.close();
+				}
+				if (serialPort != null) {
+					serialPort.close();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+
+	//-------------------------SOLICITUD HTTP--------------------------------------
+    /*
 	private void makeAsyncData() {
 		HttpURLConnection connection = null;
 		BufferedReader reader = null;
@@ -387,47 +446,112 @@ public class MainActivity extends Activity {
 			}
 		}
 	}
+    */
 
 
+	//--------------------------------HHTP POST CON JSON--------------------------------------------------
+   /*
+   @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode == 0x124) { // Código de lectura del QR
+        if (resultCode == 0) {
+            if (data != null) {
+                mBeepManager.playBeepSoundAndVibrate();
+                String qrCode = data.getStringExtra("qrCode");
 
-	/*
-	private void sendSignalToSerialPort(String signal) {
-		SerialPort serialPort = null;
-		OutputStream outputStream = null;
+                // Mostrar el QR leído en un Toast
+                Toast.makeText(MainActivity.this, "QR leído: " + qrCode, Toast.LENGTH_LONG).show();
 
-		try {
-			//dev/ttyS0" al dispositivo serial adecuado
-			File device = new File("/dev/ttyS0");
-			int baudrate = 9600; // baudrate según las especificaciones del molinete
-			int flags = 0;
+                // Llamar a la función para enviar el JSON al servidor
+                sendQRDataToServer(qrCode);
 
-			// Abrir el puerto serial
-			serialPort = new SerialPort(device, baudrate, flags);
-			outputStream = serialPort.getOutputStream();
+                return;
+            }
+        } else {
+            Toast.makeText(MainActivity.this, "Scan Failed", Toast.LENGTH_LONG).show();
+        }
+    }
+}
 
-			Log.d("SerialTest", "Simulando envío: " + signal);
-			// Enviar la señal
-			outputStream.write(signal.getBytes());
-			outputStream.flush();
+// Función para enviar datos JSON al servidor
+private void sendQRDataToServer(String qrData) {
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                // Crear la URL del endpoint
+                URL url = new URL("https://jsonplaceholder.typicode.com/posts");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-			Toast.makeText(MainActivity.this, "Señal enviada al molinete", Toast.LENGTH_SHORT).show();
+                // Configurar la conexión HTTP
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Username", "usuario123");
+                connection.setRequestProperty("Password", "contraseña123");
+                connection.setRequestProperty("Content-Type", "application/json; utf-8");
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setDoOutput(true);
 
-		} catch (IOException | SecurityException e) {
-			e.printStackTrace();
-			Toast.makeText(MainActivity.this, "Error al enviar señal al molinete", Toast.LENGTH_LONG).show();
-		} finally {
-			try {
-				if (outputStream != null) {
-					outputStream.close();
-				}
-				if (serialPort != null) {
-					serialPort.close();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}*/
+                //------------------------------
+               String credentials = "usuario123:contraseña123";
+               String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+               connection.setRequestProperty("Authorization", "Basic " + base64Credentials);
+               connection.setRequestProperty("Authorization", "Bearer TU_TOKEN");
+               //--------------------
+
+
+                // Crear el JSON a enviar
+                JsonObject json = new JsonObject();
+                json.addProperty("message", "QR leido");
+                json.addProperty("data", qrData);
+
+                // Enviar el JSON al servidor
+                try (OutputStream os = connection.getOutputStream()) {
+                    byte[] input = json.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                // Leer la respuesta del servidor
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Procesamos la respuesta JSON
+                    InputStreamReader reader = new InputStreamReader(connection.getInputStream(), "utf-8");
+                    BufferedReader br = new BufferedReader(reader);
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+
+                    // Convertimos la respuesta en JSON
+                    JsonObject responseJson = new Gson().fromJson(response.toString(), JsonObject.class);
+                    String status = responseJson.get("status").getAsString();
+                    String message = responseJson.get("message").getAsString();
+
+                    // Mostrar el mensaje si el status es "00"
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if ("00".equals(status)) {
+                                Toast.makeText(MainActivity.this, "QR VALIDADO:, Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, "QR NO VALIDO: " + message, Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                } else {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error HTTP: " + responseCode, Toast.LENGTH_LONG).show());
+                }
+
+                connection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }
+    }).start();
+}
+   */
+
 
 
 	@Override
