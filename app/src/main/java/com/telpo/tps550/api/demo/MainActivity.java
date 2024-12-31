@@ -306,7 +306,7 @@ public class MainActivity extends Activity {
 		if (requestCode == 0x124) {
 			if (resultCode == 0) {
 				if (data != null) {
-					mBeepManager.playBeepSoundAndVibrate();
+
 					String qrcode = data.getStringExtra("qrCode");
 					Toast.makeText(MainActivity.this, "Verificando...", Toast.LENGTH_LONG).show();
 					//Toast.makeText(MainActivity.this, "Scan result:" + qrcode, Toast.LENGTH_LONG).show();
@@ -352,6 +352,7 @@ public class MainActivity extends Activity {
 					json.addProperty("appUserId", "INNOVTN20243009");
 					json.addProperty("channel", "INNVN");
 					json.addProperty("qrCodeValue", qrData);
+                    json.addProperty( "RutaValidation","achumani");
 
 					// Enviar el JSON al servidor
 					try {
@@ -387,7 +388,8 @@ public class MainActivity extends Activity {
 								String dataSerial = "OPEN";
 								if ("000".equals(state)) {
 									Toast.makeText(MainActivity.this, "QR VALIDADO CORRECTAMENTE", Toast.LENGTH_LONG).show();
-									// Escribir la señal por el puerto serial
+
+                                    // Escribir la señal por el puerto serial
 									sendSignalToSerialPort(dataSerial);
 								} else {
 									Toast.makeText(MainActivity.this, "QR NO VALIDO", Toast.LENGTH_LONG).show();
@@ -451,6 +453,7 @@ public class MainActivity extends Activity {
 					outputStream.flush();
 
 					Toast.makeText(MainActivity.this, "Puerto encontrado:" + serialPortPath, Toast.LENGTH_LONG).show();
+					mBeepManager.playBeepSoundAndVibrate();
 					Toast.makeText(MainActivity.this, "Señal enviada", Toast.LENGTH_SHORT).show();
 					Log.d("SerialTest", "Señal enviada correctamente por " + serialPortPath + "Dato enviado: " +signal);
 
